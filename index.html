@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>זיכרון הצבעות</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: linear-gradient(160deg, #0b1730 0%, #162354 55%, #0b1730 100%);
+    font-family: 'Frank Ruhl Libre', 'David Libre', Georgia, serif;
+    direction: rtl;
+    color: #fff;
+    overflow-x: hidden;
+  }
+
+  /* Dot grid */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: radial-gradient(circle at 1px 1px, rgba(201,168,76,0.07) 1px, transparent 0);
+    background-size: 32px 32px;
+  }
+
+  #app { position: relative; z-index: 1; }
+
+  /* ── Screens ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── Center layout ── */
+  .center {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 100vh; gap: 18px; padding: 24px;
+    text-align: center;
+  }
+
+  /* ── Spinner ── */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(201,168,76,0.2);
+    border-top-color: #c9a84c;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 11px 22px; border-radius: 10px; border: none;
+    color: #fff; font-weight: 700; font-size: 15px;
+    cursor: pointer; font-family: inherit; transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-blue    { background: linear-gradient(135deg, #1d3f8f, #2563eb); }
+  .btn-gold    { background: linear-gradient(135deg, #92400e, #d97706); }
+  .btn-ghost   { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #a0b4d4; }
+  .btn-refresh {
+    background: transparent; border: 1px solid rgba(255,255,255,0.15);
+    color: #7a9cc4; border-radius: 8px; padding: 8px 20px;
+    cursor: pointer; font-size: 13px; font-family: inherit;
+  }
+  .btn-back {
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.13);
+    color: #7a9cc4; border-radius: 8px; padding: 6px 13px;
+    cursor: pointer; font-size: 13px; font-family: inherit; flex-shrink: 0;
+  }
+
+  /* ── Error box ── */
+  .error-box {
+    color: #fca5a5; font-size: 13px; font-family: monospace;
+    max-width: 380px; line-height: 1.7;
+    background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 10px; padding: 12px 16px;
+  }
+
+  /* ── Home ── */
+  .home-wrap { max-width: 680px; margin: 0 auto; padding: 28px 16px; }
+
+  .logo-badge {
+    display: inline-block; border: 1px solid rgba(201,168,76,0.4);
+    padding: 3px 28px; margin-bottom: 10px; border-radius: 2px;
+    color: #c9a84c; font-size: 10px; letter-spacing: 5px; font-family: monospace;
+  }
+  h1.main-title {
+    color: #fff; font-size: clamp(28px,6vw,48px); font-weight: 700;
+    line-height: 1; text-shadow: 0 0 40px rgba(201,168,76,0.3);
+    margin: 6px 0;
+  }
+  .subtitle { color: #7a9cc4; font-size: 15px; }
+  .gold-line {
+    width: 60px; height: 2px; margin: 14px auto 0;
+    background: linear-gradient(90deg, transparent, #c9a84c, transparent);
+  }
+
+  /* ── Game cards ── */
+  .game-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+
+  .game-card {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 14px; padding: 16px 20px; cursor: pointer;
+    transition: all 0.18s; display: flex; align-items: center; gap: 16px;
+  }
+  .game-card:hover {
+    background: rgba(201,168,76,0.1); border-color: rgba(201,168,76,0.6);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3); transform: translateY(-1px);
+  }
+  .card-icon {
+    width: 50px; height: 50px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; color: #fff; font-weight: 900;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  }
+  .icon-for    { background: linear-gradient(135deg, #14532d, #22c55e); }
+  .icon-against { background: linear-gradient(135deg, #7f1d1d, #ef4444); }
+  .card-body { flex: 1; min-width: 0; }
+  .card-title { color: #fff; font-weight: 700; font-size: 15px; line-height: 1.35; margin-bottom: 6px; }
+  .card-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
+  .card-arrow { color: #c9a84c; font-size: 20px; flex-shrink: 0; }
+
+  .pill {
+    font-size: 11px; font-weight: 600; padding: 2px 9px;
+    border-radius: 20px; border: 1px solid transparent;
+    background: rgba(255,255,255,0.08); color: #7a9cc4;
+  }
+  .pill-for     { background: rgba(34,197,94,0.15);  color: #86efac; border-color: rgba(34,197,94,0.35); }
+  .pill-against { background: rgba(239,68,68,0.15);  color: #fca5a5; border-color: rgba(239,68,68,0.35); }
+
+  /* ── Play screen ── */
+  /* ── Play screen — full viewport, no scroll ── */
+  #screen-play {
+    height: 100dvh;
+    overflow: hidden;
+    display: none;
+  }
+  #screen-play.active { display: flex; flex-direction: column; }
+
+  .play-wrap {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .play-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; flex-shrink: 0; }
+  .play-vote-type { color: #c9a84c; font-size: 10px; letter-spacing: 3px; font-family: monospace; margin-bottom: 2px; }
+  .play-title { color: #fff; font-weight: 700; font-size: clamp(12px,3vw,15px); line-height: 1.2; }
+  .play-date  { color: #7a9cc4; font-size: 11px; margin-top: 2px; }
+
+  .stats-bar {
+    display: flex; justify-content: space-around; align-items: center;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(201,168,76,0.18);
+    border-radius: 10px; padding: 6px 12px; margin-bottom: 8px;
+    flex-shrink: 0;
+  }
+  .stat-box { text-align: center; }
+  .stat-label { color: #7a9cc4; font-size: 10px; margin-bottom: 1px; }
+  .stat-value { color: #fff; font-weight: 800; font-size: clamp(14px,3.5vw,18px); font-family: monospace; }
+  .stat-divider { width: 1px; height: 26px; background: rgba(255,255,255,0.1); }
+
+  .progress-wrap { height: 3px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-bottom: 8px; overflow: hidden; flex-shrink: 0; }
+  .progress-bar  { height: 100%; border-radius: 4px; background: linear-gradient(90deg,#166534,#22c55e); transition: width 0.4s ease; width: 0%; }
+
+  /* ── Card grid — fills remaining space ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: clamp(4px, 1.2vw, 7px);
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Cards fill the grid cell height, no fixed aspect-ratio override needed */
+  .mem-card-wrap {
+    aspect-ratio: unset !important;
+    height: 100%;
+  }
+
+  /* ── Memory card ── */
+  @keyframes pressAnim { to { transform: scale(0.92); } }
+
+  .mem-card-wrap {
+    aspect-ratio: 3/4.2;
+    perspective: 700px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.1s;
+  }
+  .mem-card-wrap.matched { cursor: default; }
+  .mem-card-wrap.pressing { transform: scale(0.92); }
+
+  .mem-card-inner {
+    width: 100%; height: 100%; position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+  }
+  .mem-card-wrap.flipped .mem-card-inner,
+  .mem-card-wrap.matched .mem-card-inner {
+    transform: rotateY(180deg);
+  }
+
+  .mem-face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    border-radius: 9px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  }
+  .mem-back {
+    background: linear-gradient(145deg, #1a2f6b, #0f1c3f);
+    border: 2px solid rgba(201,168,76,0.35);
+  }
+  .mem-back-emoji  { font-size: clamp(14px,4vw,24px); }
+  .mem-back-label  { color: rgba(201,168,76,0.35); font-size: 7px; letter-spacing: 1px; font-family: monospace; margin-top: 3px; }
+
+  .mem-front {
+    transform: rotateY(180deg);
+    background: linear-gradient(145deg, #1e3a8a, #1d4ed8);
+    border: 2px solid rgba(96,165,250,0.5);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    padding: 5px 4px;
+  }
+  .mem-card-wrap.matched .mem-front {
+    background: linear-gradient(145deg, #14532d, #166534);
+    border-color: rgba(34,197,94,0.7);
+    box-shadow: 0 0 16px rgba(34,197,94,0.35);
+  }
+  .mem-name {
+    color: #fff; font-weight: 700; text-align: center;
+    line-height: 1.25; font-size: clamp(8px,2vw,11px); word-break: break-word;
+  }
+  .mem-check { font-size: 1.5em; margin-bottom: 1px; display: block; }
+
+  /* ── Win screen ── */
+  @keyframes pop { from { opacity:0; transform:scale(0.8); } to { opacity:1; transform:scale(1); } }
+  .win-screen {
+    background: rgba(255,255,255,0.05); border: 2px solid rgba(201,168,76,0.45);
+    border-radius: 20px; padding: 30px 24px; text-align: center;
+    animation: pop 0.45s cubic-bezier(0.34,1.56,0.64,1);
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 0;
+  }
+  /* ── Difficulty selector ── */
+  .diff-wrap { display: flex; justify-content: center; gap: 8px; margin: 14px 0 0; }
+  .diff-btn {
+    padding: 7px 18px; border-radius: 20px; border: 1.5px solid rgba(201,168,76,0.3);
+    background: transparent; color: #7a9cc4; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .diff-btn:hover { border-color: rgba(201,168,76,0.7); color: #fff; }
+  .diff-btn.active { background: rgba(201,168,76,0.15); border-color: #c9a84c; color: #fde68a; }
+  .diff-btn.easy   { --ac: #22c55e; }
+  .diff-btn.medium { --ac: #c9a84c; }
+  .diff-btn.hard   { --ac: #ef4444; }
+  .diff-btn.easy.active   { background: rgba(34,197,94,0.15);  border-color: #22c55e; color: #86efac; }
+  .diff-btn.medium.active { background: rgba(201,168,76,0.15); border-color: #c9a84c; color: #fde68a; }
+  .diff-btn.hard.active   { background: rgba(239,68,68,0.15);  border-color: #ef4444; color: #fca5a5; }
+
+  .win-stats { display: flex; justify-content: center; gap: 32px; margin-bottom: 20px; }
+  .win-stat-label { color: #7a9cc4; font-size: 12px; margin-bottom: 4px; }
+  .win-stat-value { color: #c9a84c; font-weight: 800; font-size: 26px; font-family: monospace; }
+  .win-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  /* ── Comparison bars ── */
+  .cmp-wrap {
+    width: 100%; margin: 14px 0 16px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .cmp-row { display: flex; flex-direction: column; gap: 4px; }
+  .cmp-labels { display: flex; justify-content: space-between; font-size: 11px; color: #7a9cc4; }
+  .cmp-label-you { color: #fde68a; font-weight: 700; }
+  .cmp-track {
+    height: 10px; background: rgba(255,255,255,0.08);
+    border-radius: 10px; position: relative; overflow: visible;
+  }
+  .cmp-avg-bar {
+    position: absolute; top: 0; left: 0; height: 100%;
+    background: rgba(120,140,180,0.35); border-radius: 10px;
+    transition: width 0.6s ease;
+  }
+  .cmp-you-bar {
+    position: absolute; top: 0; left: 0; height: 100%;
+    border-radius: 10px; transition: width 0.8s 0.1s ease;
+  }
+  .cmp-you-bar.better { background: linear-gradient(90deg, #166534, #22c55e); }
+  .cmp-you-bar.worse  { background: linear-gradient(90deg, #7f1d1d, #ef4444); }
+  .cmp-you-bar.same   { background: linear-gradient(90deg, #92400e, #d97706); }
+  .cmp-verdict { font-size: 11px; text-align: left; margin-top: 1px; }
+  .verdict-better { color: #86efac; }
+  .verdict-worse  { color: #fca5a5; }
+  .verdict-same   { color: #fde68a; }
+  .cmp-loading { color: #7a9cc4; font-size: 12px; text-align: center; padding: 10px; font-family: monospace; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ LOADING ══ -->
+  <div id="screen-loading" class="screen active">
+    <div class="center">
+      <div style="font-size:52px">🗳️</div>
+      <div style="color:#c9a84c;font-size:22px;font-weight:700">זיכרון הצבעות</div>
+      <div class="spinner"></div>
+      <div id="load-msg" style="color:#7a9cc4;font-size:13px;font-family:monospace;max-width:300px"></div>
+    </div>
+  </div>
+
+  <!-- ══ ERROR ══ -->
+  <div id="screen-error" class="screen">
+    <div class="center">
+      <div style="font-size:48px">⚠️</div>
+      <div style="color:#f87171;font-size:18px;font-weight:700">שגיאה בטעינה</div>
+      <div id="error-msg" class="error-box"></div>
+      <button class="btn btn-blue" onclick="loadGames(true)">🔄 נסה שוב</button>
+    </div>
+  </div>
+
+  <!-- ══ HOME ══ -->
+  <div id="screen-home" class="screen">
+    <div class="home-wrap">
+      <div style="text-align:center;margin-bottom:36px">
+        <div class="logo-badge">כנסת ישראל</div>
+        <h1 class="main-title">🗳️ זיכרון הצבעות</h1>
+        <p class="subtitle">מצא זוגות של חברי כנסת שהצביעו יחד</p>
+        <div class="gold-line"></div>
+      </div>
+      <!-- Difficulty -->
+      <div class="diff-wrap">
+        <button class="diff-btn easy"   onclick="setDiff('easy')"  id="diff-easy">קל · 5</button>
+        <button class="diff-btn medium active" onclick="setDiff('medium')" id="diff-medium">בינוני · 7</button>
+        <button class="diff-btn hard"   onclick="setDiff('hard')"  id="diff-hard">קשה · 10</button>
+      </div>
+      <div id="game-list" class="game-list" style="margin-top:14px"></div>
+      <div style="text-align:center">
+        <button class="btn-refresh" onclick="loadGames(true)">🔄 רענן רשימה</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PLAY ══ -->
+  <div id="screen-play" class="screen">
+    <div class="play-wrap">
+      <div class="play-header">
+        <button class="btn-back" onclick="showHome()">◄ חזור</button>
+        <div style="flex:1">
+          <div id="play-type"  class="play-vote-type"></div>
+          <div id="play-title" class="play-title"></div>
+          <div id="play-date"  class="play-date"></div>
+        </div>
+      </div>
+
+      <div class="stats-bar">
+        <div class="stat-box">
+          <div class="stat-label">⏱ זמן</div>
+          <div class="stat-value" id="stat-time">00:00</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-box">
+          <div class="stat-label">🔄 מהלכים</div>
+          <div class="stat-value" id="stat-moves">0</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-box">
+          <div class="stat-label">✅ זוגות</div>
+          <div class="stat-value" id="stat-pairs">0 / 0</div>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+
+      <div id="card-grid" class="card-grid"></div>
+      <div id="win-screen" class="win-screen" style="display:none"></div>
+    </div>
+  </div>
+
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════════════════
+
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzT15l5xd73KP7KFGivqMXJkuZtM8jsTCI9TOqY5DC3K-EeuLPwfW2A8KF9WFREYPf8/exec";
+const SCORES_URL       = "https://script.google.com/macros/s/AKfycbzT15l5xd73KP7KFGivqMXJkuZtM8jsTCI9TOqY5DC3K-EeuLPwfW2A8KF9WFREYPf8/exec";
+
+const API_BASES   = [
+  "https://www.knesset.gov.il",
+  "https://knesset.gov.il",
+  "https://main.knesset.gov.il",
+];
+const DETAIL_PATH = "/WebSiteApi/knessetapi/Votes/GetVoteDetails/";
+const CACHE_KEY   = "knesset-game-cache-v3";
+const MAX_PAIRS   = 10;
+
+// ── Utilities ──────────────────────────────────────────────────────────────
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// Fetch sheet rows via Google Apps Script proxy — works from file:// without CORS issues
+async function fetchSheetRows() {
+  let resp, data;
+  try {
+    resp = await fetch(APPS_SCRIPT_URL);
+    data = await resp.json();
+  } catch(e) {
+    throw new Error("לא ניתן לטעון את המשחק. בדוק חיבור אינטרנט.");
+  }
+  if (!Array.isArray(data)) {
+    throw new Error("שגיאה בטעינת המשחק.");
+  }
+  const rows = data.filter(r => r.voteId && /^\d+$/.test(r.voteId))
+    .map(r => ({ ...r, shortName: (r.shortName || r.short_name || "").trim() }));
+  console.log("Sheet rows loaded:", rows);
+  return rows;
+}
+
+async function fetchVoteDetails(voteId) {
+  for (const base of API_BASES) {
+    try {
+      const r = await fetch(base + DETAIL_PATH + voteId, { mode: "cors" });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      if (data?.VoteDetails) return data;
+    } catch (_) {}
+    await sleep(200);
+  }
+  throw new Error(`שגיאה בטעינת הצבעה ${voteId}`);
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const pad2    = n => String(n).padStart(2, "0");
+const fmtTime = s => `${pad2(Math.floor(s / 60))}:${pad2(s % 60)}`;
+
+// ── LocalStorage cache ─────────────────────────────────────────────────────
+function readCache()  { try { return JSON.parse(localStorage.getItem(CACHE_KEY) || "{}"); } catch { return {}; } }
+function writeCache(d){ try { localStorage.setItem(CACHE_KEY, JSON.stringify(d)); } catch {} }
+
+// ── Screen helpers ─────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-" + id).classList.add("active");
+}
+function setLoadMsg(msg) { document.getElementById("load-msg").textContent = msg || "…"; }
+
+// ── App state ──────────────────────────────────────────────────────────────
+let allGames = [];
+
+// ══════════════════════════════════════════════════════════════════════════
+// LOAD
+// ══════════════════════════════════════════════════════════════════════════
+async function loadGames(bustCache = false) {
+  showScreen("loading");
+  setLoadMsg("המשחק בטעינה…");
+  try {
+    if (bustCache) writeCache({});
+    const rows  = await fetchSheetRows();
+    if (!rows.length) throw new Error("לא נמצאו משחקים זמינים");
+
+    const cache = readCache();
+    const games = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const { voteId, type } = rows[i];
+      const ck = `${voteId}__${type}`;
+      setLoadMsg(`טוען הצבעה ${i + 1} מתוך ${rows.length}…`);
+
+      if (cache[ck]) { games.push(cache[ck]); continue; }
+
+      try {
+        const data    = await fetchVoteDetails(voteId);
+        const header  = data.VoteHeader?.[0] || {};
+        // Store ALL voters — difficulty slice happens at game start
+        const members = shuffle(
+          (data.VoteDetails || []).filter(d => d.Title === type).map(d => d.MkName)
+        );
+
+        if (members.length < 2) continue;
+
+        const game = {
+          voteId, type,
+          title:     header.ItemTitle   || "ללא כותרת",
+          shortName: rows[i].shortName  || "",
+          date:      header.VoteDateStr || "",
+          decision:  header.Decision    || "",
+          members,
+        };
+        cache[ck] = game;
+        games.push(game);
+      } catch (e) { console.warn("Skip", voteId, e.message); }
+    }
+
+    writeCache(cache);
+    allGames = games;
+
+    if (!games.length) throw new Error("לא נמצאו הצבעות תקינות בגיליון");
+    renderHome();
+    showScreen("home");
+  } catch (e) {
+    document.getElementById("error-msg").textContent = e.message;
+    showScreen("error");
+  }
+}
+
+// ── Difficulty ────────────────────────────────────────────────────────────
+const DIFF = { easy: 5, medium: 7, hard: 10 };
+let currentDiff = 'medium';
+
+function setDiff(d) {
+  currentDiff = d;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('diff-' + d).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// HOME
+// ══════════════════════════════════════════════════════════════════════════
+function renderHome() {
+  const list = document.getElementById("game-list");
+  list.innerHTML = "";
+  allGames.forEach((game, idx) => {
+    const isFor = game.type === "בעד";
+    const card  = document.createElement("div");
+    card.className = "game-card";
+    card.innerHTML = `
+      <div class="card-icon ${isFor ? "icon-for" : "icon-against"}">${isFor ? "✓" : "✗"}</div>
+      <div class="card-body">
+        <div class="card-title">${esc(game.shortName || game.title)}</div>
+        <div class="card-tags">
+          <span class="pill ${isFor ? "pill-for" : "pill-against"}">${isFor ? "✔ מצביעי בעד" : "✘ מצביעי נגד"}</span>
+          ${game.date     ? `<span class="pill">${esc(game.date)}</span>` : ""}
+          ${game.decision ? `<span class="pill">${esc(game.decision)}</span>` : ""}
+        </div>
+      </div>
+      <span class="card-arrow">▶</span>`;
+    card.onclick = () => startGame(idx);
+    list.appendChild(card);
+  });
+}
+
+function showHome() {
+  stopTimer();
+  showScreen("home");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PLAY
+// ══════════════════════════════════════════════════════════════════════════
+let gameState = null;
+
+function startGame(idx) {
+  const game = allGames[idx];
+  const pairsCount = Math.min(game.members.length, DIFF[currentDiff]);
+  const names = shuffle([...game.members]).slice(0, pairsCount);
+
+  const cards = shuffle(
+    names.flatMap((name, i) => [
+      { id: i * 2,     pairId: i, name, flipped: false, matched: false },
+      { id: i * 2 + 1, pairId: i, name, flipped: false, matched: false },
+    ])
+  );
+
+  gameState = {
+    game, cards, pairsCount,
+    openCards: [], moves: 0, matched: 0, elapsed: 0, won: false, locked: false,
+  };
+
+  // Header
+  const diffLabel = { easy: 'קל · 5 זוגות', medium: 'בינוני · 7 זוגות', hard: 'קשה · 10 זוגות' };
+  document.getElementById("play-type").textContent  = (game.type === "בעד" ? "✔ בעד" : "✘ נגד") + "  |  " + diffLabel[currentDiff];
+  document.getElementById("play-title").textContent = game.shortName || game.title;
+  document.getElementById("play-date").textContent  = game.date ? "📅 " + game.date : "";
+
+  updateStats();
+  renderGrid();
+  document.getElementById("win-screen").style.display = "none";
+  document.getElementById("card-grid").style.display  = "grid";
+  showScreen("play");
+  startTimer();
+}
+
+// ── Timer ──────────────────────────────────────────────────────────────────
+let timerInterval = null;
+function startTimer() {
+  stopTimer();
+  timerInterval = setInterval(() => {
+    if (gameState && !gameState.won) {
+      gameState.elapsed++;
+      document.getElementById("stat-time").textContent = fmtTime(gameState.elapsed);
+    }
+  }, 1000);
+}
+function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+// ── Stats ──────────────────────────────────────────────────────────────────
+function updateStats() {
+  const { moves, matched, pairsCount, elapsed } = gameState;
+  document.getElementById("stat-time").textContent  = fmtTime(elapsed);
+  document.getElementById("stat-moves").textContent = moves;
+  document.getElementById("stat-pairs").textContent = `${matched} / ${pairsCount}`;
+  document.getElementById("progress-bar").style.width =
+    pairsCount ? `${(matched / pairsCount) * 100}%` : "0%";
+}
+
+// ── Grid ───────────────────────────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById("card-grid");
+  grid.innerHTML = "";
+  gameState.cards.forEach(card => {
+    const wrap  = document.createElement("div");
+    wrap.className = "mem-card-wrap" +
+      (card.flipped ? " flipped" : "") +
+      (card.matched ? " matched" : "");
+    wrap.dataset.id = card.id;
+    wrap.innerHTML = `
+      <div class="mem-card-inner">
+        <div class="mem-face mem-back">
+          <div class="mem-back-emoji">🗳️</div>
+          <div class="mem-back-label">כנסת</div>
+        </div>
+        <div class="mem-face mem-front">
+          <div class="mem-name">
+            ${card.matched ? '<span class="mem-check">✓</span>' : ""}
+            ${esc(card.name)}
+          </div>
+        </div>
+      </div>`;
+
+    if (!card.matched) {
+      wrap.addEventListener("pointerdown",  () => wrap.classList.add("pressing"));
+      wrap.addEventListener("pointerup",    () => wrap.classList.remove("pressing"));
+      wrap.addEventListener("pointerleave", () => wrap.classList.remove("pressing"));
+      wrap.addEventListener("click", () => flipCard(card.id));
+    }
+    grid.appendChild(wrap);
+  });
+}
+
+function getCardEl(cardId) {
+  return document.querySelector(`.mem-card-wrap[data-id="${cardId}"]`);
+}
+
+function flipCard(cardId) {
+  if (!gameState || gameState.locked || gameState.won) return;
+  const card = gameState.cards.find(c => c.id === cardId);
+  if (!card || card.flipped || card.matched) return;
+
+  card.flipped = true;
+  getCardEl(cardId)?.classList.add("flipped");
+  gameState.openCards.push(card);
+
+  if (gameState.openCards.length < 2) return;
+
+  // Second card flipped
+  const [first, second] = gameState.openCards;
+  gameState.openCards = [];
+  gameState.moves++;
+  gameState.locked = true;
+
+  if (first.pairId === second.pairId) {
+    // Match!
+    setTimeout(() => {
+      first.matched  = true;
+      second.matched = true;
+      [first, second].forEach(c => {
+        const el = getCardEl(c.id);
+        if (el) {
+          el.classList.add("matched");
+          el.querySelector(".mem-name").innerHTML = '<span class="mem-check">✓</span>' + esc(c.name);
+        }
+      });
+      gameState.matched++;
+      gameState.locked = false;
+      updateStats();
+      if (gameState.matched === gameState.pairsCount) endGame();
+    }, 420);
+  } else {
+    // No match — flip back
+    setTimeout(() => {
+      first.flipped  = false;
+      second.flipped = false;
+      getCardEl(first.id)?.classList.remove("flipped");
+      getCardEl(second.id)?.classList.remove("flipped");
+      gameState.locked = false;
+    }, 900);
+  }
+
+  updateStats();
+}
+
+// ── Win ────────────────────────────────────────────────────────────────────
+// ── Save result to Apps Script ────────────────────────────────────────────
+async function saveResult(payload) {
+  try {
+    await fetch(SCORES_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(payload),
+    });
+  } catch(e) { console.warn("saveResult failed:", e.message); }
+}
+
+// ── Fetch avg stats for a difficulty ──────────────────────────────────────
+async function fetchAvgStats(difficulty) {
+  try {
+    const r    = await fetch(SCORES_URL + "?scores=1&difficulty=" + difficulty);
+    const data = await r.json();
+    if (!Array.isArray(data) || !data.length) return null;
+    const avg = f => Math.round(data.reduce((s,r) => s + (Number(r[f]) || 0), 0) / data.length);
+    return {
+      moves:        avg("moves"),
+      time_seconds: avg("time_seconds"),
+      accuracy:     avg("accuracy"),
+      count:        data.length,
+    };
+  } catch(e) { return null; }
+}
+
+// ── Render comparison bars ─────────────────────────────────────────────────
+function renderComparison(avg, you) {
+  // For moves & time: lower is better. For accuracy: higher is better.
+  function bar(youVal, avgVal, lowerBetter) {
+    const max    = Math.max(youVal, avgVal) * 1.25 || 1;
+    const youPct = Math.min(100, Math.round((youVal / max) * 100));
+    const avgPct = Math.min(100, Math.round((avgVal / max) * 100));
+    const better = lowerBetter ? youVal <= avgVal : youVal >= avgVal;
+    const same   = youVal === avgVal;
+    const cls    = same ? "same" : better ? "better" : "worse";
+    const vText  = same
+      ? "זהה לממוצע"
+      : lowerBetter
+        ? (better ? `פחות ב־${avgVal - youVal}` : `יותר ב־${youVal - avgVal}`)
+        : (better ? `גבוה ב־${youVal - avgVal}%` : `נמוך ב־${avgVal - youVal}%`);
+    const vCls   = same ? "verdict-same" : better ? "verdict-better" : "verdict-worse";
+    return { youPct, avgPct, cls, vText, vCls };
+  }
+
+  const m = bar(you.moves,        avg.moves,        true);
+  const t = bar(you.time_seconds, avg.time_seconds, true);
+  const a = bar(you.accuracy,     avg.accuracy,     false);
+
+  const row = (label, youVal, avgVal, b) => `
+    <div class="cmp-row">
+      <div class="cmp-labels">
+        <span>${label}</span>
+        <span><span class="cmp-label-you">${youVal}</span> <span style="opacity:.5">ממוצע ${avgVal}</span></span>
+      </div>
+      <div class="cmp-track">
+        <div class="cmp-avg-bar" style="width:${b.avgPct}%"></div>
+        <div class="cmp-you-bar ${b.cls}" style="width:${b.youPct}%"></div>
+      </div>
+      <div class="cmp-verdict ${b.vCls}">${b.vText}</div>
+    </div>`;
+
+  return `
+    <div class="cmp-wrap">
+      ${row("🔄 מהלכים", you.moves, avg.moves, m)}
+      ${row("⏱ זמן", fmtTime(you.time_seconds), fmtTime(avg.time_seconds), t)}
+      ${row("🎯 דיוק", you.accuracy + "%", avg.accuracy + "%", a)}
+    </div>
+    <div style="color:#7a9cc4;font-size:11px;text-align:center;margin-bottom:12px">
+      על בסיס ${avg.count} משחק${avg.count !== 1 ? "ים" : ""} בדרגה זו
+    </div>`;
+}
+
+function endGame() {
+  stopTimer();
+  gameState.won = true;
+  const { moves, elapsed, pairsCount, game } = gameState;
+  const accuracy = Math.round((pairsCount / Math.max(moves, 1)) * 100);
+
+  const payload = {
+    difficulty:      currentDiff,
+    pairs:           pairsCount,
+    moves,
+    time_seconds:    elapsed,
+    accuracy,
+    vote_id:         game.voteId,
+    vote_short_name: game.shortName || game.title,
+    vote_type:       game.type,
+  };
+
+  saveResult(payload);
+
+  const win = document.getElementById("win-screen");
+  win.innerHTML = `
+    <div style="font-size:48px;margin-bottom:6px">🏆</div>
+    <h2 style="color:#c9a84c;font-size:24px;margin:0 0 4px;font-weight:700">כל הכבוד!</h2>
+    <p style="color:#7a9cc4;margin:0 0 14px;font-size:13px">מצאת את כל ${pairsCount} הזוגות</p>
+    <div class="win-stats">
+      <div><div class="win-stat-label">זמן</div><div class="win-stat-value">${fmtTime(elapsed)}</div></div>
+      <div><div class="win-stat-label">מהלכים</div><div class="win-stat-value">${moves}</div></div>
+      <div><div class="win-stat-label">דיוק</div><div class="win-stat-value">${accuracy}%</div></div>
+    </div>
+    <div id="cmp-section"><div class="cmp-loading">⏳ טוען השוואה לממוצע…</div></div>
+    <div class="win-btns">
+      <button class="btn btn-gold"  onclick="restartGame()">🔄 שחק שוב</button>
+      <button class="btn btn-ghost" onclick="showHome()">🏠 בחר משחק</button>
+    </div>`;
+
+  document.getElementById("card-grid").style.display = "none";
+  win.style.display = "block";
+
+  // Load avg after short delay so our result is already saved
+  setTimeout(async () => {
+    const avg = await fetchAvgStats(currentDiff);
+    const el  = document.getElementById("cmp-section");
+    if (!el) return;
+    if (!avg || avg.count < 2) {
+      el.innerHTML = '<div class="cmp-loading" style="color:#c9a84c">🎉 אתה הראשון! אין עדיין ממוצע להשוואה.</div>';
+    } else {
+      el.innerHTML = renderComparison(avg, { moves, time_seconds: elapsed, accuracy });
+    }
+  }, 1800);
+}
+
+function restartGame() {
+  const idx = allGames.indexOf(gameState.game);
+  startGame(idx >= 0 ? idx : 0);
+}
+
+// ── Escape HTML ────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+loadGames();
+</script>
+</body>
+</html>
