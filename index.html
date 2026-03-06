@@ -570,7 +570,13 @@ let gameState = null;
 function startGame(idx) {
   const game = allGames[idx];
   const pairsCount = Math.min(game.members.length, DIFF[currentDiff]);
-  const names = shuffle([...game.members]).slice(0, pairsCount);
+  // בנימין נתניהו חייב להופיע אם קיים ברשימה
+  const BIBI = "בנימין נתניהו";
+  const hasBibi = game.members.includes(BIBI);
+  const pool  = shuffle(game.members.filter(n => n !== BIBI));
+  const names = hasBibi
+    ? [BIBI, ...pool].slice(0, pairsCount)
+    : pool.slice(0, pairsCount);
 
   const cards = shuffle(
     names.flatMap((name, i) => [
