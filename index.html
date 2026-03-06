@@ -925,11 +925,6 @@ function showInstructions() {
 
 function dismissModal() {
   document.getElementById("modal-instructions").style.display = "none";
-  if (window._pendingGameIdx !== undefined) {
-    const idx = window._pendingGameIdx;
-    window._pendingGameIdx = undefined;
-    _origStartGame(idx);
-  }
 }
 
 function closeModal(e) {
@@ -937,12 +932,11 @@ function closeModal(e) {
   if (e.target === document.getElementById("modal-instructions")) dismissModal();
 }
 
-// Show modal before every game
-const _origStartGame = startGame;
-startGame = function(idx) {
-  document.getElementById("modal-instructions").style.display = "flex";
-  // Override dismiss to actually start the game
-  window._pendingGameIdx = idx;
+// Show modal after home screen loads
+const _origRenderHome = renderHome;
+renderHome = function() {
+  _origRenderHome();
+  showInstructions();
 };
 
 loadGames();
