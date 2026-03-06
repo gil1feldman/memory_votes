@@ -340,7 +340,7 @@
       </div>
       <div id="game-list" class="game-list" style="margin-top:14px"></div>
       <div style="text-align:center">
-        <button class="btn-refresh" onclick="loadGames(true)">🔄 רענן רשימה</button>
+        <button class="btn-refresh" onclick="renderHome()">🔀 הצבעות אחרות</button>
       </div>
     </div>
   </div>
@@ -533,7 +533,11 @@ function setDiff(d) {
 function renderHome() {
   const list = document.getElementById("game-list");
   list.innerHTML = "";
-  allGames.forEach((game, idx) => {
+
+  // Pick 4 random games
+  const picked = shuffle([...allGames.map((game, idx) => ({ game, idx }))]).slice(0, 4);
+
+  picked.forEach(({ game, idx }) => {
     const isFor = game.type === "בעד";
     const card  = document.createElement("div");
     card.className = "game-card";
