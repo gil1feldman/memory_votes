@@ -571,7 +571,7 @@ function startGame(idx) {
   const game = allGames[idx];
   const pairsCount = Math.min(game.members.length, DIFF[currentDiff]);
   // בנימין נתניהו חייב להופיע אם קיים ברשימה
-  const BIBI = "בנימין נתניהו";
+  const BIBI = "נתניהו בנימין";
   const hasBibi = game.members.includes(BIBI);
   const pool  = shuffle(game.members.filter(n => n !== BIBI));
   const names = hasBibi
