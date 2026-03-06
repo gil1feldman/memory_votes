@@ -400,7 +400,7 @@ const API_BASES   = [
   "https://main.knesset.gov.il",
 ];
 const DETAIL_PATH = "/WebSiteApi/knessetapi/Votes/GetVoteDetails/";
-const CACHE_KEY   = "knesset-game-cache-v3";
+const CACHE_KEY   = "knesset-game-cache-v4";
 const MAX_PAIRS   = 10;
 
 // ── Utilities ──────────────────────────────────────────────────────────────
@@ -487,10 +487,8 @@ async function loadGames(bustCache = false) {
       try {
         const data    = await fetchVoteDetails(voteId);
         const header  = data.VoteHeader?.[0] || {};
-        // Store ALL voters — difficulty slice happens at game start
-        const members = shuffle(
-          (data.VoteDetails || []).filter(d => d.Title === type).map(d => d.MkName)
-        );
+        // Store ALL voters unsorted — shuffle happens fresh at each game start
+        const members = (data.VoteDetails || []).filter(d => d.Title === type).map(d => d.MkName);
 
         if (members.length < 2) continue;
 
