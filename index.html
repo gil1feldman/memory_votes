@@ -269,6 +269,43 @@
   .win-stat-value { color: #c9a84c; font-weight: 800; font-size: 26px; font-family: monospace; }
   .win-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
+  /* ── Instructions modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(5, 12, 35, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal-box {
+    background: linear-gradient(160deg, #0f2050, #1a3570);
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 20px;
+    padding: 28px 24px;
+    max-width: 420px; width: 100%;
+    text-align: center;
+    animation: pop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    position: relative;
+  }
+  .modal-title {
+    color: #c9a84c; font-size: 20px; font-weight: 700; margin-bottom: 18px;
+  }
+  .modal-steps {
+    display: flex; flex-direction: column; gap: 12px;
+    margin-bottom: 24px; text-align: right;
+  }
+  .modal-step {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 10px 14px;
+  }
+  .modal-step-icon { font-size: 22px; flex-shrink: 0; line-height: 1.4; }
+  .modal-step-text { color: #cbd5e1; font-size: 14px; line-height: 1.6; }
+  .modal-step-text strong { color: #fff; }
+
   /* ── Comparison bars ── */
   .cmp-wrap {
     width: 100%; margin: 14px 0 16px;
@@ -385,6 +422,34 @@
 
 
 </div>
+
+  <!-- ══ INSTRUCTIONS MODAL ══ -->
+  <div id="modal-instructions" class="modal-overlay" style="display:none" onclick="closeModal(event)">
+    <div class="modal-box">
+      <div class="modal-title">🗳️ איך משחקים?</div>
+      <div class="modal-steps">
+        <div class="modal-step">
+          <div class="modal-step-icon">1️⃣</div>
+          <div class="modal-step-text">בחר הצבעה של הכנסת ודרגת קושי</div>
+        </div>
+        <div class="modal-step">
+          <div class="modal-step-icon">🃏</div>
+          <div class="modal-step-text">לפניך קלפים הפוכים — כל אחד מכיל שם של חבר כנסת</div>
+        </div>
+        <div class="modal-step">
+          <div class="modal-step-icon">👆</div>
+          <div class="modal-step-text">הפוך שני קלפים בכל תור — אם <strong>שני השמות זהים</strong>, מצאת זוג!</div>
+        </div>
+        <div class="modal-step">
+          <div class="modal-step-icon">🏆</div>
+          <div class="modal-step-text">מצא את כל הזוגות במינימום מהלכים ובזמן הקצר ביותר</div>
+        </div>
+      </div>
+      <button class="btn btn-blue" onclick="dismissModal()" style="width:100%">
+        בואו נשחק! ▶
+      </button>
+    </div>
+  </div>
 
 <script>
 // ══════════════════════════════════════════════════════════════════════════
@@ -852,6 +917,34 @@ function esc(s) {
 }
 
 // ── Boot ───────────────────────────────────────────────────────────────────
+const MODAL_KEY = "knesset-instructions-seen";
+
+function showInstructions() {
+  document.getElementById("modal-instructions").style.display = "flex";
+}
+
+function dismissModal() {
+  document.getElementById("modal-instructions").style.display = "none";
+  if (window._pendingGameIdx !== undefined) {
+    const idx = window._pendingGameIdx;
+    window._pendingGameIdx = undefined;
+    _origStartGame(idx);
+  }
+}
+
+function closeModal(e) {
+  // Close if clicking the overlay itself (not the box)
+  if (e.target === document.getElementById("modal-instructions")) dismissModal();
+}
+
+// Show modal before every game
+const _origStartGame = startGame;
+startGame = function(idx) {
+  document.getElementById("modal-instructions").style.display = "flex";
+  // Override dismiss to actually start the game
+  window._pendingGameIdx = idx;
+};
+
 loadGames();
 </script>
 </body>
