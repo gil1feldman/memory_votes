@@ -487,9 +487,17 @@ async function fetchSheetRows() {
   if (!Array.isArray(data)) {
     throw new Error("שגיאה בטעינת המשחק.");
   }
-  const rows = data.filter(r => r.voteId && /^\d+$/.test(r.voteId))
+
+  // ── סינון שורות פעילות בלבד (עמודת "פעיל" = "כן") ──────────────────────
+  const rows = data
+    .filter(r => {
+      const active = (r["פעיל"] || r["active"] || "").toString().trim();
+      return active === "כן";
+    })
+    .filter(r => r.voteId && /^\d+$/.test(r.voteId))
     .map(r => ({ ...r, shortName: (r.shortName || r.short_name || "").trim() }));
-  console.log("Sheet rows loaded:", rows);
+
+  console.log("Sheet rows loaded (active only):", rows);
   return rows;
 }
 
@@ -541,7 +549,7 @@ async function loadGames(bustCache = false) {
   try {
     if (bustCache) writeCache({});
     const rows  = await fetchSheetRows();
-    if (!rows.length) throw new Error("לא נמצאו משחקים זמינים");
+    if (!rows.length) throw new Error("לא נמצאו משחקים פעילים זמינים");
 
     const cache = readCache();
     const games = [];
