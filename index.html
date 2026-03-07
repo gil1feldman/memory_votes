@@ -95,41 +95,110 @@
     background: linear-gradient(90deg, transparent, #c9a84c, transparent);
   }
 
-  /* ── Game cards ── */
-  .game-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  /* ══════════════════════════════════════════════
+     ── Game cards — NEW DESIGN ──
+  ══════════════════════════════════════════════ */
+  .game-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
 
   .game-card {
-    background: rgba(255,255,255,0.04); border: 1px solid rgba(201,168,76,0.2);
-    border-radius: 14px; padding: 16px 20px; cursor: pointer;
-    transition: all 0.18s; display: flex; align-items: center; gap: 16px;
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.18s, box-shadow 0.18s;
+    display: flex;
+    min-height: 100px;
   }
   .game-card:hover {
-    background: rgba(201,168,76,0.1); border-color: rgba(201,168,76,0.6);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3); transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.45);
   }
-  .card-icon {
-    width: 50px; height: 50px; border-radius: 50%; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 24px; color: #fff; font-weight: 900;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
-  }
-  .icon-for    { background: linear-gradient(135deg, #14532d, #22c55e); }
-  .icon-against { background: linear-gradient(135deg, #7f1d1d, #ef4444); }
-  .card-body { flex: 1; min-width: 0; }
-  .card-title { color: #fff; font-weight: 700; font-size: 15px; line-height: 1.35; margin-bottom: 6px; }
-  .card-tags  { display: flex; gap: 6px; flex-wrap: wrap; }
-  .card-arrow { color: #c9a84c; font-size: 20px; flex-shrink: 0; }
 
+  /* Colored banner on the right (RTL = visual right side) */
+  .card-banner {
+    flex-shrink: 0;
+    width: 88px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 12px 8px;
+  }
+  .card-banner-for {
+    background: linear-gradient(160deg, #14532d, #16a34a);
+  }
+  .card-banner-against {
+    background: linear-gradient(160deg, #7f1d1d, #dc2626);
+  }
+  .banner-symbol {
+    font-size: 32px;
+    line-height: 1;
+    font-weight: 900;
+    color: #fff;
+  }
+  .banner-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.85);
+    letter-spacing: 0.5px;
+    text-align: center;
+  }
+
+  /* Main card body */
+  .card-content {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-right: none;
+    border-radius: 0 16px 16px 0;
+    padding: 14px 16px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  /* The question line */
+  .card-question {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    font-family: monospace;
+    margin-bottom: 2px;
+  }
+  .card-question-for     { color: #86efac; }
+  .card-question-against { color: #fca5a5; }
+
+  .card-title {
+    color: #fff;
+    font-weight: 700;
+    font-size: clamp(13px, 2.5vw, 15px);
+    line-height: 1.4;
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+  }
   .pill {
     font-size: 11px; font-weight: 600; padding: 2px 9px;
     border-radius: 20px; border: 1px solid transparent;
     background: rgba(255,255,255,0.08); color: #7a9cc4;
   }
-  .pill-for     { background: rgba(34,197,94,0.15);  color: #86efac; border-color: rgba(34,197,94,0.35); }
-  .pill-against { background: rgba(239,68,68,0.15);  color: #fca5a5; border-color: rgba(239,68,68,0.35); }
+
+  .card-arrow {
+    color: rgba(255,255,255,0.25);
+    font-size: 16px;
+    align-self: center;
+    margin-right: auto;
+    padding-left: 4px;
+  }
 
   /* ── Play screen ── */
-  /* ── Play screen — full viewport, no scroll ── */
   #screen-play {
     height: 100dvh;
     overflow: hidden;
@@ -167,7 +236,7 @@
   .progress-wrap { height: 3px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-bottom: 8px; overflow: hidden; flex-shrink: 0; }
   .progress-bar  { height: 100%; border-radius: 4px; background: linear-gradient(90deg,#166534,#22c55e); transition: width 0.4s ease; width: 0%; }
 
-  /* ── Card grid — fills remaining space ── */
+  /* ── Card grid ── */
   .card-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -176,15 +245,12 @@
     min-height: 0;
   }
 
-  /* Cards fill the grid cell height, no fixed aspect-ratio override needed */
   .mem-card-wrap {
     aspect-ratio: unset !important;
     height: 100%;
   }
 
   /* ── Memory card ── */
-  @keyframes pressAnim { to { transform: scale(0.92); } }
-
   .mem-card-wrap {
     aspect-ratio: 3/4.2;
     perspective: 700px;
@@ -248,6 +314,7 @@
     align-items: center; justify-content: center;
     min-height: 0;
   }
+
   /* ── Difficulty selector ── */
   .diff-wrap { display: flex; justify-content: center; gap: 8px; margin: 14px 0 0; }
   .diff-btn {
@@ -420,7 +487,6 @@
     </div>
   </div>
 
-
 </div>
 
   <!-- ══ INSTRUCTIONS MODAL ══ -->
@@ -475,7 +541,6 @@ const MAX_PAIRS   = 10;
 // ── Utilities ──────────────────────────────────────────────────────────────
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-// Fetch sheet rows via Google Apps Script proxy — works from file:// without CORS issues
 async function fetchSheetRows() {
   let resp, data;
   try {
@@ -488,7 +553,6 @@ async function fetchSheetRows() {
     throw new Error("שגיאה בטעינת המשחק.");
   }
 
-  // הסינון לפי "פעיל" נעשה בצד השרת (Apps Script) — כאן רק מנקים את הנתונים
   const rows = data
     .filter(r => r.voteId && /^\d+$/.test(r.voteId))
     .map(r => ({ ...r, shortName: (r.shortName || r.short_name || "").trim() }));
@@ -560,7 +624,6 @@ async function loadGames(bustCache = false) {
       try {
         const data    = await fetchVoteDetails(voteId);
         const header  = data.VoteHeader?.[0] || {};
-        // Store ALL voters unsorted — shuffle happens fresh at each game start
         const members = (data.VoteDetails || []).filter(d => d.Title === type).map(d => d.MkName);
 
         if (members.length < 2) continue;
@@ -607,24 +670,33 @@ function renderHome() {
   const list = document.getElementById("game-list");
   list.innerHTML = "";
 
-  // Pick 4 random games
   const picked = shuffle([...allGames.map((game, idx) => ({ game, idx }))]).slice(0, 4);
 
   picked.forEach(({ game, idx }) => {
     const isFor = game.type === "בעד";
     const card  = document.createElement("div");
     card.className = "game-card";
+
+    // Question text: what we're asking the player to find
+    const question = isFor ? "מי הצביע בעד?" : "מי הצביע נגד?";
+
     card.innerHTML = `
-      <div class="card-icon ${isFor ? "icon-for" : "icon-against"}">${isFor ? "✓" : "✗"}</div>
-      <div class="card-body">
-        <div class="card-title">${esc(game.shortName || game.title)}</div>
-        <div class="card-tags">
-          <span class="pill ${isFor ? "pill-for" : "pill-against"}">${isFor ? "✔ מצביעי בעד" : "✘ מצביעי נגד"}</span>
-          ${game.date     ? `<span class="pill">${esc(game.date)}</span>` : ""}
+      <div class="card-banner ${isFor ? "card-banner-for" : "card-banner-against"}">
+        <div class="banner-symbol">${isFor ? "✓" : "✗"}</div>
+        <div class="banner-label">${isFor ? "בעד" : "נגד"}</div>
+      </div>
+      <div class="card-content">
+        <div>
+          <div class="card-question ${isFor ? "card-question-for" : "card-question-against"}">${question}</div>
+          <div class="card-title">${esc(game.shortName || game.title)}</div>
+        </div>
+        <div class="card-meta">
+          ${game.date     ? `<span class="pill">📅 ${esc(game.date)}</span>` : ""}
           ${game.decision ? `<span class="pill">${esc(game.decision)}</span>` : ""}
         </div>
       </div>
-      <span class="card-arrow">▶</span>`;
+      <span class="card-arrow">◀</span>`;
+
     card.onclick = () => startGame(idx);
     list.appendChild(card);
   });
@@ -643,7 +715,6 @@ let gameState = null;
 function startGame(idx) {
   const game = allGames[idx];
   const pairsCount = Math.min(game.members.length, DIFF[currentDiff]);
-  // בנימין נתניהו חייב להופיע אם קיים ברשימה
   const BIBI = "נתניהו בנימין";
   const hasBibi = game.members.includes(BIBI);
   const pool  = shuffle(game.members.filter(n => n !== BIBI));
@@ -663,7 +734,6 @@ function startGame(idx) {
     openCards: [], moves: 0, matched: 0, elapsed: 0, won: false, locked: false,
   };
 
-  // Header
   const diffLabel = { easy: 'קל · 5 זוגות', medium: 'בינוני · 7 זוגות', hard: 'קשה · 10 זוגות' };
   document.getElementById("play-type").textContent  = (game.type === "בעד" ? "✔ בעד" : "✘ נגד") + "  |  " + diffLabel[currentDiff];
   document.getElementById("play-title").textContent = game.shortName || game.title;
@@ -749,14 +819,12 @@ function flipCard(cardId) {
 
   if (gameState.openCards.length < 2) return;
 
-  // Second card flipped
   const [first, second] = gameState.openCards;
   gameState.openCards = [];
   gameState.moves++;
   gameState.locked = true;
 
   if (first.pairId === second.pairId) {
-    // Match!
     setTimeout(() => {
       first.matched  = true;
       second.matched = true;
@@ -773,7 +841,6 @@ function flipCard(cardId) {
       if (gameState.matched === gameState.pairsCount) endGame();
     }, 420);
   } else {
-    // No match — flip back
     setTimeout(() => {
       first.flipped  = false;
       second.flipped = false;
@@ -787,7 +854,6 @@ function flipCard(cardId) {
 }
 
 // ── Win ────────────────────────────────────────────────────────────────────
-// ── Save result to Apps Script ────────────────────────────────────────────
 async function saveResult(payload) {
   try {
     await fetch(SCORES_URL, {
@@ -798,7 +864,6 @@ async function saveResult(payload) {
   } catch(e) { console.warn("saveResult failed:", e.message); }
 }
 
-// ── Fetch avg stats for a difficulty ──────────────────────────────────────
 async function fetchAvgStats(difficulty) {
   try {
     const r    = await fetch(SCORES_URL + "?scores=1&difficulty=" + difficulty);
@@ -814,9 +879,7 @@ async function fetchAvgStats(difficulty) {
   } catch(e) { return null; }
 }
 
-// ── Render comparison bars ─────────────────────────────────────────────────
 function renderComparison(avg, you) {
-  // For moves & time: lower is better. For accuracy: higher is better.
   function bar(youVal, avgVal, lowerBetter) {
     const max    = Math.max(youVal, avgVal) * 1.25 || 1;
     const youPct = Math.min(100, Math.round((youVal / max) * 100));
@@ -899,7 +962,6 @@ function endGame() {
   document.getElementById("card-grid").style.display = "none";
   win.style.display = "block";
 
-  // Load avg after short delay so our result is already saved
   setTimeout(async () => {
     const avg = await fetchAvgStats(currentDiff);
     const el  = document.getElementById("cmp-section");
@@ -936,11 +998,9 @@ function dismissModal() {
 }
 
 function closeModal(e) {
-  // Close if clicking the overlay itself (not the box)
   if (e.target === document.getElementById("modal-instructions")) dismissModal();
 }
 
-// Show modal only on first load
 const _origRenderHome = renderHome;
 let _firstLoad = true;
 renderHome = function() {
