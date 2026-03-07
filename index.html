@@ -488,16 +488,12 @@ async function fetchSheetRows() {
     throw new Error("שגיאה בטעינת המשחק.");
   }
 
-  // ── סינון שורות פעילות בלבד (עמודת "פעיל" = "כן") ──────────────────────
+  // הסינון לפי "פעיל" נעשה בצד השרת (Apps Script) — כאן רק מנקים את הנתונים
   const rows = data
-    .filter(r => {
-      const active = (r["פעיל"] || r["active"] || "").toString().trim();
-      return active === "כן";
-    })
     .filter(r => r.voteId && /^\d+$/.test(r.voteId))
     .map(r => ({ ...r, shortName: (r.shortName || r.short_name || "").trim() }));
 
-  console.log("Sheet rows loaded (active only):", rows);
+  console.log("Sheet rows loaded:", rows);
   return rows;
 }
 
