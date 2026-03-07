@@ -940,11 +940,15 @@ function closeModal(e) {
   if (e.target === document.getElementById("modal-instructions")) dismissModal();
 }
 
-// Show modal after home screen loads
+// Show modal only on first load
 const _origRenderHome = renderHome;
+let _firstLoad = true;
 renderHome = function() {
   _origRenderHome();
-  showInstructions();
+  if (_firstLoad) {
+    _firstLoad = false;
+    showInstructions();
+  }
 };
 
 loadGames();
