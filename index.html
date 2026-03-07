@@ -691,8 +691,8 @@ function renderHome() {
           <div class="card-title">${esc(game.shortName || game.title)}</div>
         </div>
         <div class="card-meta">
-          ${game.date     ? `<span class="pill">📅 ${esc(game.date)}</span>` : ""}
-          ${game.decision ? `<span class="pill">${esc(game.decision)}</span>` : ""}
+          ${game.date     ? `<span class="pill"><span style="color:#7a9cc4;font-weight:400">תאריך ההצבעה: </span>${esc(game.date)}</span>` : ""}
+          ${game.decision ? `<span class="pill"><span style="color:#7a9cc4;font-weight:400">ההחלטה שהתקבלה: </span>${esc(game.decision)}</span>` : ""}
         </div>
       </div>
       <span class="card-arrow">◀</span>`;
